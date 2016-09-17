@@ -34,7 +34,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <time.h>
-#include <Windows.h>
+//#include <Windows.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -85,6 +85,10 @@ int RposY;
 int RobjectSize;
 int status;
 // time variables
+typedef unsigned int DWORD;
+typedef unsigned char BYTE;
+typedef void* HANDLE;
+
 DWORD frameTimestamp=0;
 DWORD firstTimestamp=0;
 DWORD oldFrameTimestamp;
@@ -120,6 +124,14 @@ int cam_center_x;
 int cam_center_y;
 float cam_pix_to_mm;
 float cam_rotation;  //Camera rotation in radians 
+
+double GetTickCount(void) 
+{
+  struct timespec now;
+  if (clock_gettime(CLOCK_MONOTONIC, &now))
+    return 0;
+  return now.tv_sec * 1000.0 + now.tv_nsec / 1000000.0;
+}
 
 
 // Camera process, convert puck position to coordinates and generate trajectory prediction and visualization
@@ -392,6 +404,7 @@ void trackObjectRobot(IplImage* imgThresh){
 }
 
 
+/*
 bool openComPort(wchar_t* portSpecifier)
 {
 	DCB dcb;
@@ -477,10 +490,12 @@ bool sendMessage()
 	return writeComPort(message,14); // Send message (14 bytes)
 }
 
+*/
 
 int main(int argc, char* argv[]){
 	int counter;
-	wchar_t auxstr[20];
+	//yonic
+	//wchar_t auxstr[20];
 
 	cameraProcessInit();
 	// Parse arguments
@@ -495,7 +510,8 @@ int main(int argc, char* argv[]){
 	}
 	
 	// COM port 
-	swprintf_s(auxstr,L"\\\\.\\%S",argv[1]);
+	//yonic
+	//	swprintf_s(auxstr,L"\\\\.\\%S",argv[1]);
 
 	// Other parameters
 	if (argc==15)  // Full parameters
@@ -531,8 +547,9 @@ int main(int argc, char* argv[]){
 	printf("FPS: %d\n",fps);
 
 	// Open Serial Port
-	wprintf(L"Opening COM PORT: %s",auxstr);
-	printf("\n");
+	//yonic
+	//wprintf(L"Opening COM PORT: %s",auxstr);
+	//printf("\n");
 	
 	// LogFile
 	logFile = fopen("log.txt","wt");
@@ -571,13 +588,15 @@ int main(int argc, char* argv[]){
 	cvNamedWindow("Video");     
     //cvNamedWindow("Processed");
 	cvWaitKey(1200);
-	openComPort(auxstr);  // L"\\\\.\\COM19");
+	//yonic
+	//openComPort(auxstr);  // L"\\\\.\\COM19");
 	cvWaitKey(1000);
 	
 	//iterate through each frames of the video    
 
 	// Video writer MPG1
-	record = cvCreateVideoWriter("output.mpeg", CV_FOURCC('P','I','M','1'), 60, cvGetSize(frameGrabbed), 1);
+	//yonic//
+	//record = cvCreateVideoWriter("output.mpeg", CV_FOURCC('P','I','M','1'), 60, cvGetSize(frameGrabbed), 1);
 
 	// Init font
 	cvInitFont(&font,CV_FONT_HERSHEY_SIMPLEX|CV_FONT_ITALIC, 0.4,0.4,0,1);
@@ -615,7 +634,8 @@ int main(int argc, char* argv[]){
 		trackObjectRobot(imgThresh2);
 
 		// Send Message to Serial Port
-		sendMessage();
+		//yonic
+		//sendMessage();
 
 		// Put text over image
 		sprintf(tempStr,"%ld;%d;%d;%d",frameTimestamp-firstTimestamp,posX,posY,status);
@@ -632,7 +652,8 @@ int main(int argc, char* argv[]){
 		cvShowImage("Video", frameGrabbed);
 
 		//Write image to output video
-		cvWriteFrame(record,frameGrabbed);
+		//yonic
+		//cvWriteFrame(record,frameGrabbed);
 
 		// Write to logFile
 		//sprintf(tempStr,"%ld;%d;%d;%d\n",(frameTimestamp-oldFrameTimestamp),posX,posY,status);
@@ -645,7 +666,8 @@ int main(int argc, char* argv[]){
 		cvReleaseImage(&frameGrabbed);
 		
 		// Sometnig to read on SerialPort?
-		readComPort();
+		//yonic
+		//readComPort();
 
 		//Wait 1mS necesary???
 		int c = cvWaitKey(1);
