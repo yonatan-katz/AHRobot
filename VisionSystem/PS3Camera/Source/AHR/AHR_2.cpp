@@ -38,6 +38,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#include <iostream>
+
+using namespace std;
+
 // All units in milimeters
 #define robot_center_x 300   // Center of robot
 #define robot_center_y 500
@@ -46,7 +50,8 @@
 // NOTE: We are using the camera at 320x240 but we are outputing a 640x480 pixel position
 #define CAM_PIX_WIDTH 640
 #define CAM_PIX_HEIGHT 480
-#define CAM_PIX_TO_MM 1.4
+//#define CAM_PIX_TO_MM 1.4
+#define CAM_PIX_TO_MM 3.0
 
 time_t start,end;
 
@@ -293,7 +298,7 @@ IplImage* GetThresholdedImage(IplImage* imgHSV, int minH, int maxH, int minS, in
 // Image segmentation, object extraction based on size and form (roundness)
 void trackObjectPuck(IplImage* imgThresh){
 
- CvSeq* contours;  //hold the pointer to a contour in the memory block
+ CvSeq* contours=0;  //hold the pointer to a contour in the memory block
  CvSeq* result;   //hold sequence of points of a contour
  CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
@@ -304,12 +309,14 @@ void trackObjectPuck(IplImage* imgThresh){
  
  //finding all contours in the image (segmentation)
  cvFindContours(imgThresh, storage, &contours, sizeof(CvContour), CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE, cvPoint(0,0));
+ 
+ //printf("%d\n",contours);
  if (contours)
 	status=1;
  while (contours)
  {
 	 double area = cvContourArea(contours);
-
+	
 	 if ((area>20)&&(area<400))  // Min and Max size of object
 	 {
 		status = 2;
@@ -354,7 +361,7 @@ void trackObjectPuck(IplImage* imgThresh){
 // Image segmentation, object extraction based on size and form (roundness)
 void trackObjectRobot(IplImage* imgThresh){
 
- CvSeq* contours;  //hold the pointer to a contour in the memory block
+ CvSeq* contours=0;  //hold the pointer to a contour in the memory block
  CvSeq* result;   //hold sequence of points of a contour
  CvMemStorage *storage = cvCreateMemStorage(0); //storage area for all contours
 
@@ -368,15 +375,17 @@ void trackObjectRobot(IplImage* imgThresh){
  while (contours)
  {
 	 double area = cvContourArea(contours);
-
-	 if ((area>18)&&(area<100))  // Min and Max size of object
+	 
+	 //cout << area << endl;
+	 if ((area>40)&&(area<500))  // Min and Max size of object
 	 {
         //Detecting roundness   roundness = perimeter2/(2*pi*area)
 		double perimeter = cvArcLength(contours);
 		double roundness = (perimeter*perimeter)/(6.28*area);
 		//printf("%lf",roundness);
+				
 		if (roundness < 4)
-		{
+		{ 
 			//printf("area:%.2lf R:%.2lf\n",area,roundness);
 			CvMoments *moments = (CvMoments*)malloc(sizeof(CvMoments));
 			cvMoments(contours, moments, 1);
@@ -389,6 +398,7 @@ void trackObjectRobot(IplImage* imgThresh){
 			RposX = floor(moment10*2/(double)area+0.5); // round
 			RposY = floor(moment01*2/(double)area+0.5);
 			RobjectSize = area;
+			cout << RposX << "," << RposY << endl;
 			if(RposX>=0 && RposY>=0)
 			{
 				cvLine(frameGrabbed, cvPoint(RposX/2, RposY/2), cvPoint(RposX/2, RposY/2), cvScalar(100,255,50), 4);
@@ -626,12 +636,15 @@ int main(int argc, char* argv[]){
 
           	
 		/// Apply the erosion-dilatation operation for filtering
-		cvErode( imgThresh, imgThresh, NULL,1 );
-		cvDilate( imgThresh, imgThresh, NULL,1 );
+		//cvErode( imgThresh, imgThresh, NULL,1 );
+		//cvDilate( imgThresh, imgThresh, NULL,1 );
             
 		//track the possition of the puck and the robot
 		trackObjectPuck(imgThresh);
 		trackObjectRobot(imgThresh2);
+		
+		
+		
 
 		// Send Message to Serial Port
 		//yonic
@@ -648,7 +661,7 @@ int main(int argc, char* argv[]){
 		// LOG TEXT
 		cvPutText (frameGrabbed, logStr, cvPoint(20,220), &font, cvScalar(50,220,220));
 
-		//cvShowImage("Processed", imgThresh);           
+		cvShowImage("Processed", imgThresh2);           
 		cvShowImage("Video", frameGrabbed);
 
 		//Write image to output video
